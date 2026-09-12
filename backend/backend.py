@@ -1,5 +1,6 @@
 # Imports
 import math
+import json
 from pathlib import Path
 from collections import Counter, defaultdict
 import xml.etree.ElementTree as ET
@@ -17,6 +18,7 @@ from pydantic import BaseModel
 
 BASE_DIR = Path(__file__).resolve().parent
 CORPUS_FILE = BASE_DIR / "corpus_100.txt"
+DELIVERABLES_DIR = BASE_DIR / "deliverables"
 
 STOP_WORDS = set(stopwords.words("english"))
 STEMMER = PorterStemmer()
@@ -546,6 +548,26 @@ def proximity_search(query, k, positional_index):
 
     return results
 
+
+# DELIVERABLE EXPORTS
+
+def write_index_deliverables(inverted_index, positional_index):
+    """Write the assignment's two index structures as readable JSON files."""
+
+    DELIVERABLES_DIR.mkdir(exist_ok=True)
+
+    outputs = {
+        "dictionary_inverted_index.json": inverted_index,
+        "positional_index.json": positional_index,
+    }
+
+    for filename, index_data in outputs.items():
+        output_file = DELIVERABLES_DIR / filename
+
+        with open(output_file, "w", encoding="utf-8") as file:
+            json.dump(index_data, file, indent=2, sort_keys=True)
+            file.write("\n")
+
 # LOAD CORPUS AND BUILD INDEXES
 
 documents = parse_corpus(CORPUS_FILE)
@@ -560,6 +582,8 @@ document_norms = calculate_document_norms(
 )
 
 positional_index = build_positional_index(documents)
+
+write_index_deliverables(inverted_index, positional_index)
 
 # API - HOME
 

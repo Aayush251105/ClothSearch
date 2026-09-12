@@ -322,4 +322,214 @@ def ranked_retrieval(
 
     return results
 
+# PART C - POSITIONAL INDEX
+def build_positional_index(documents):
+    """
+    Build a positional index.
+
+    Structure:
+
+    term -> {
+        "df": number of documents,
+        "postings": {
+            docID: {
+                "tf": term frequency,
+                "positions": [positions]
+            }
+        }
+    }
+    """
+
+    positional_index = defaultdict(lambda: {
+        "df": 0,
+        "postings": {}
+    })
+
+    for doc_id, doc in documents.items():
+
+        full_text = (
+            doc["category"] + " " +
+            doc["title"] + " " +
+            doc["text"]
+        )
+
+        tokens = preprocess(full_text)
+
+        positions = defaultdict(list)
+
+        for position, term in enumerate(tokens):
+            positions[term].append(position)
+
+        for term, term_positions in positions.items():
+
+            positional_index[term]["postings"][doc_id] = {
+                "tf": len(term_positions),
+                "positions": term_positions
+            }
+
+    # Calculate document frequency
+    for term in positional_index:
+        positional_index[term]["df"] = len(
+            positional_index[term]["postings"]
+        )
+
+    return dict(positional_index)
+
+
+# PART C - EXACT PHRASE SEARCH
+
+def phrase_search(phrase, positional_index):
+    """
+    Exact phrase search.
+
+    Example:
+
+    Query:
+        cotton shirt
+
+    A document matches only if:
+
+        cotton position = p
+        shirt position = p + 1
+    """
+
+    query_terms = preprocess(phrase)
+
+    if not query_terms:
+        return {}
+
+    # If only one term is supplied
+    if len(query_terms) == 1:
+
+        term = query_terms[0]
+
+        if term not in positional_index:
+            return {}
+
+        return {
+            doc_id: posting["positions"]
+            for doc_id, posting
+            in positional_index[term]["postings"].items()
+        }
+
+    # Find documents containing every query term
+    candidate_docs = None
+
+    for term in query_terms:
+
+        if term not in positional_index:
+            return {}
+
+        docs = set(
+            positional_index[term]["postings"].keys()
+        )
+
+        if candidate_docs is None:
+            candidate_docs = docs
+        else:
+            candidate_docs &= docs
+
+    results = {}
+
+    for doc_id in candidate_docs:
+
+        first_term_positions = (
+            positional_index[query_terms[0]]
+            ["postings"][doc_id]["positions"]
+        )
+
+        matching_positions = []
+
+        for start_position in first_term_positions:
+
+            match = True
+
+            for offset, term in enumerate(query_terms):
+
+                positions = (
+                    positional_index[term]
+                    ["postings"][doc_id]["positions"]
+                )
+
+                if start_position + offset not in positions:
+                    match = False
+                    break
+
+            if match:
+                matching_positions.append(start_position)
+
+        if matching_positions:
+            results[doc_id] = matching_positions
+
+    return results
+
+
+# PART C - PROXIMITY SEARCH
+
+def proximity_search(query, k, positional_index):
+    """
+    Ordered proximity search for two terms.
+
+    Example:
+
+        cotton WITHIN/3 shirt
+
+    means cotton must occur before shirt and
+    their positional distance must be <= 3.
+    """
+
+    query_terms = preprocess(query)
+
+    if len(query_terms) != 2:
+        return {}
+
+    first_term = query_terms[0]
+    second_term = query_terms[1]
+
+    if first_term not in positional_index:
+        return {}
+
+    if second_term not in positional_index:
+        return {}
+
+    first_docs = set(
+        positional_index[first_term]["postings"].keys()
+    )
+
+    second_docs = set(
+        positional_index[second_term]["postings"].keys()
+    )
+
+    candidate_docs = first_docs & second_docs
+
+    results = {}
+
+    for doc_id in candidate_docs:
+
+        first_positions = (
+            positional_index[first_term]
+            ["postings"][doc_id]["positions"]
+        )
+
+        second_positions = (
+            positional_index[second_term]
+            ["postings"][doc_id]["positions"]
+        )
+
+        matches = []
+
+        for p1 in first_positions:
+
+            for p2 in second_positions:
+
+                # Ordered proximity:
+                # first term occurs before second term
+                # and distance is at most k.
+                if 0 < p2 - p1 <= k:
+                    matches.append((p1, p2))
+
+        if matches:
+            results[doc_id] = matches
+
+    return results
 

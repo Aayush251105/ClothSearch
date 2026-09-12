@@ -21,6 +21,19 @@ CORPUS_FILE = BASE_DIR / "corpus_100.txt"
 STOP_WORDS = set(stopwords.words("english"))
 STEMMER = PorterStemmer()
 
+# FASTAPI SETUP
+
+app = FastAPI(title="Clothing Search Engine")
+
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 # REQUEST MODELS
 

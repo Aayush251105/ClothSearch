@@ -24,6 +24,7 @@ function App() {
     if (!query.trim() || loading) return;
     setLoading(true); setError(""); setResults([]); setHasSearched(true);
     try {
+      // Select the API route and request shape for the active search mode.
       let url = "http://localhost:8000/search/ranked";
       let body = { query };
       if (mode === "phrase") url = "http://localhost:8000/search/phrase";
@@ -37,6 +38,7 @@ function App() {
     } finally { setLoading(false); }
   };
 
+  // Proximity results contain position pairs; phrase results contain single positions.
   const formatPositions = (positions) => positions.map((position) => (Array.isArray(position) ? position.join(" – ") : position)).join(", ");
 
   return (

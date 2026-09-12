@@ -583,6 +583,7 @@ document_norms = calculate_document_norms(
 
 positional_index = build_positional_index(documents)
 
+# Keep the submission files in sync with the indexes used by the API.
 write_index_deliverables(inverted_index, positional_index)
 
 # API - HOME

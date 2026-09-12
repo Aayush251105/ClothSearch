@@ -533,3 +533,19 @@ def proximity_search(query, k, positional_index):
 
     return results
 
+# LOAD CORPUS AND BUILD INDEXES
+
+documents = parse_corpus(CORPUS_FILE)
+
+inverted_index, document_lengths, processed_documents = (
+    build_inverted_index(documents)
+)
+
+document_norms = calculate_document_norms(
+    inverted_index,
+    documents
+)
+
+positional_index = build_positional_index(documents)
+
+

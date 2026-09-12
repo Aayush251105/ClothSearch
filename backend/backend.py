@@ -561,4 +561,86 @@ document_norms = calculate_document_norms(
 
 positional_index = build_positional_index(documents)
 
+# API - HOME
 
+@app.get("/")
+def home():
+    return {
+        "message": "Clothing Search Engine API is running",
+        "documents": len(documents)
+    }
+
+
+# API - RANKED SEARCH
+@app.post("/search/ranked")
+def ranked_search(request: SearchRequest):
+
+    results = ranked_retrieval(
+        request.query,
+        inverted_index,
+        document_norms,
+        documents,
+        top_k=10
+    )
+
+    return {
+        "query": request.query,
+        "mode": "ranked",
+        "results": results
+    }
+
+
+# API - PHRASE SEARCH
+@app.post("/search/phrase")
+def phrase_search_api(request: SearchRequest):
+
+    matches = phrase_search(
+        request.query,
+        positional_index
+    )
+
+    results = []
+
+    for doc_id, positions in sorted(matches.items()):
+
+        results.append({
+            "doc_id": doc_id,
+            "title": documents[doc_id]["title"],
+            "category": documents[doc_id]["category"],
+            "positions": positions
+        })
+
+    return {
+        "query": request.query,
+        "mode": "phrase",
+        "results": results
+    }
+
+
+# API - PROXIMITY SEARCH
+@app.post("/search/proximity")
+def proximity_search_api(request: ProximityRequest):
+
+    matches = proximity_search(
+        request.query,
+        request.k,
+        positional_index
+    )
+
+    results = []
+
+    for doc_id, positions in sorted(matches.items()):
+
+        results.append({
+            "doc_id": doc_id,
+            "title": documents[doc_id]["title"],
+            "category": documents[doc_id]["category"],
+            "positions": positions
+        })
+
+    return {
+        "query": request.query,
+        "mode": "proximity",
+        "k": request.k,
+        "results": results
+    }

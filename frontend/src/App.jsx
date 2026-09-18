@@ -58,8 +58,21 @@ function App() {
           </div>
           <div className="search-controls">
             <label className="sr-only" htmlFor="search-mode">Search mode</label>
-            <select id="search-mode" value={mode} onChange={(event) => setMode(event.target.value)}>
-              {Object.entries(searchModes).map(([value, item]) => <option key={value} value={value}>{item.label} search</option>)}
+            <select
+              id="search-mode"
+              value={mode}
+              onChange={(event) => {
+                setMode(event.target.value);
+                setResults([]);
+                setHasSearched(false);
+                setError("");
+              }}
+            >
+              {Object.entries(searchModes).map(([value, item]) =>
+                <option key={value} value={value}>
+                  {item.label} search
+                </option>
+              )}
             </select>
             {mode === "proximity" && <label className="distance-control" htmlFor="distance"><span>Within</span><input id="distance" type="number" min="1" value={k} onChange={(event) => setK(event.target.value)} /></label>}
             <button type="submit" disabled={!query.trim() || loading}>{loading ? "Searching…" : "Search"}</button>
